@@ -1,0 +1,2 @@
+# Parcial-1_STR
+SISTEMAS EN TIEMPO REAL
