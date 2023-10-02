@@ -1,3 +1,4 @@
+// librerias
 #include <stdio.h>
 #include <string.h>
 #include "driver/ledc.h"
@@ -9,16 +10,12 @@
 #include "driver/uart.h" 
 #include <math.h>
 #include "esp_event.h"
-
 #include "freertos/queue.h"
 
 
-#define UART_NUM UART_NUM_0
-#define BUF_SIZE (1024)
 
 
-
-
+// define entradas para el boton
 #define ADC_CHANNEL         ADC1_CHANNEL_0 // Canal ADC que se utilizará
 #define ADC_WIDTH           ADC_WIDTH_BIT_12 // Resolución del ADC
 #define ADC_ATTENUATION     ADC_ATTEN_DB_11 // Atenuación del ADC
@@ -49,21 +46,14 @@
 #define RXD_PIN (GPIO_NUM_5) // Reemplaza GPIO_NUM_5 con el número de pin que desees
 #define LED_RANGE_START 'R' // Nuevo prefijo para identificar comandos de rango
 #define LED_RANGE_LENGTH 6 // Longitud total del comando de rango (incluido 'R' y otros caracteres)
-#define BUF_SIZE 128  // Cambia el tamaño según tus necesidades
+#define BUF_SIZE 1024 // Cambia el tamaño según tus necesidades
 #define portTICK_RATE_MS portTICK_PERIOD_MS
 
-QueueHandle_t uart_queue;
 
 
 
 
-//Variables del ADC
-int raw = 0;
-int res_2 = 1000;
-float temp = 1.0;
-float v_res = 0.0;
-float res_ntc = 0.0;
-int temp_index = 0;
+
 
 //valores para la temperatura RGB
 int temp_valor1=0;
@@ -78,11 +68,15 @@ esp_err_t init_led(void);
 #define Bits_ADC 4096 // Resolución del ADC (12 bits)
 #define Beta 113000.0   // Valor Beta del termistor
 
-
+int raw = 0;
+int res_2 = 1000;
+float temp = 1.0;
+float v_res = 0.0;
+float res_ntc = 0.0;
+int temp_index = 0;
 
 #define MAX_INTENSITY          100
 #define MAX_DUTY_CYCLE          8091 // Máximo valor de duty cycle para el 100%
-
 
 
 #define BUTTON_PIN (26) // Cambia esto al pin GPIO donde está conectado tu botón
@@ -94,11 +88,18 @@ static int speed_index = 0; // Índice de velocidad actual
 static int speeds[] = {1000, 800, 600, 400, 200};
 
 
-// Definición de la cola para enviar valores ADC
+
+
+// Definición de la cola para enviar valores ADCy uart
 QueueHandle_t adc_queue;
+QueueHandle_t uart_queue;
 
 int current_intensity = 0; // Intensidad actual de los LED
 
+
+
+
+//Inicializo el pin del led
 esp_err_t init_led(void) 
 {
     // Inicializo el pin del led ROJO
@@ -114,9 +115,6 @@ esp_err_t init_led(void)
     gpio_set_direction(ledB, GPIO_MODE_OUTPUT);
     return ESP_OK;
 }
-
-
-
 
 
 
@@ -201,6 +199,8 @@ void set_led_intensity(void *pvParameters) {
     }
 }
 
+
+// Funcion para dectectar el boton
 void button_task(void *pvParameter) {
     gpio_config_t button_config = {
         .pin_bit_mask = 1ULL << BUTTON_PIN,
@@ -223,6 +223,8 @@ void button_task(void *pvParameter) {
     }
 }
 
+
+// Cambia la velocidad de impresion 
 void message_task(void *pvParameter) {
     uint32_t  temperas;
     
@@ -285,11 +287,7 @@ void task_read_adc(void *pvParameter) {
     }
 }
 
-
-
-
-
-
+// Funcion de Comunicacion
 void uart_init() {
     uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -303,7 +301,9 @@ void uart_init() {
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
     ESP_ERROR_CHECK(uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 0, NULL, 0));
 }
-s
+
+
+// Funcion para recibir el mensaje
 void uart_receive_task(void *arg) {
     uint8_t *data = (uint8_t *)malloc(BUF_SIZE);
     u_int32_t datos;
@@ -322,10 +322,7 @@ void uart_receive_task(void *arg) {
 }
 
 
-
-
-
-
+// funcion principal 
 void app_main() {
 
         // Set the LEDC peripheral configuration
